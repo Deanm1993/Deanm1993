@@ -1,0 +1,130 @@
+<html><head><base href="https://medreminder.app/">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MedTracker: Your Personal Medication Reminder</title>
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    background-color: #f0f8ff;
+    margin: 0;
+    padding: 20px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+  }
+  .app-container {
+    background-color: white;
+    border-radius: 10px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    padding: 20px;
+    width: 300px;
+    text-align: center;
+  }
+  h1 {
+    color: #4a90e2;
+    margin-bottom: 20px;
+  }
+  .button {
+    background-color: #4a90e2;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 16px;
+    transition: background-color 0.3s;
+  }
+  .button:hover {
+    background-color: #357abd;
+  }
+  .button:disabled {
+    background-color: #cccccc;
+    cursor: not-allowed;
+  }
+  #nextDoseInfo {
+    margin-top: 20px;
+    font-weight: bold;
+  }
+  #tickOffNextDose {
+    display: none;
+    margin-top: 10px;
+  }
+</style>
+</head>
+<body>
+  <div class="app-container">
+    <h1>MedTracker</h1>
+    <button id="takeDose" class="button">Take First Dose</button>
+    <p id="nextDoseInfo"></p>
+    <button id="tickOffNextDose" class="button">Tick Off Next Dose</button>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js"></script>
+  <script>
+    const takeDoseBtn = document.getElementById('takeDose');
+    const tickOffNextDoseBtn = document.getElementById('tickOffNextDose');
+    const nextDoseInfo = document.getElementById('nextDoseInfo');
+    let nextDoseTime;
+
+    takeDoseBtn.addEventListener('click', () => {
+      takeDoseBtn.disabled = true;
+      nextDoseTime = moment().add(4, 'hours');
+      updateNextDoseInfo();
+      scheduleReminder();
+    });
+
+    tickOffNextDoseBtn.addEventListener('click', () => {
+      tickOffNextDoseBtn.style.display = 'none';
+      takeDoseBtn.disabled = false;
+      nextDoseInfo.textContent = '';
+    });
+
+    function updateNextDoseInfo() {
+      nextDoseInfo.textContent = `Next dose due at: ${nextDoseTime.format('HH:mm')}`;
+    }
+
+    function scheduleReminder() {
+      const timeUntilReminder = nextDoseTime.diff(moment());
+      setTimeout(() => {
+        showReminder();
+      }, timeUntilReminder);
+    }
+
+    function showReminder() {
+      if ('Notification' in window) {
+        Notification.requestPermission().then(permission => {
+          if (permission === 'granted') {
+            new Notification('Medication Reminder', {
+              body: 'It\'s time for your next dose!',
+              icon: '/favicon.ico'
+            });
+          }
+        });
+      }
+      tickOffNextDoseBtn.style.display = 'inline-block';
+    }
+
+    // Check for saved state on page load
+    window.addEventListener('load', () => {
+      const savedNextDoseTime = localStorage.getItem('nextDoseTime');
+      if (savedNextDoseTime) {
+        nextDoseTime = moment(savedNextDoseTime);
+        if (nextDoseTime.isAfter(moment())) {
+          takeDoseBtn.disabled = true;
+          updateNextDoseInfo();
+          scheduleReminder();
+        } else {
+          localStorage.removeItem('nextDoseTime');
+        }
+      }
+    });
+
+    // Save state before page unload
+    window.addEventListener('beforeunload', () => {
+      if (nextDoseTime) {
+        localStorage.setItem('nextDoseTime', nextDoseTime.toISOString());
+      }
+    });
+  </script>
+</body></html>
