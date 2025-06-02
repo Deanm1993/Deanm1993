@@ -1,131 +1,74 @@
 <!DOCTYPE html>
-<html><head><base href="https://Deanm1993.gitgub.io/Deanm1993/">
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>MedTracker: Your Personal Medication Reminder</title>
-<style>
-  body {
-    font-family: Arial, sans-serif;
-    background-color: #f0f8ff;
-    margin: 0;
-    padding: 20px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    min-height: 100vh;
-  }
-  .app-container {
-    background-color: white;
-    border-radius: 10px;
-    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-    padding: 20px;
-    width: 300px;
-    text-align: center;
-  }
-  h1 {
-    color: #4a90e2;
-    margin-bottom: 20px;
-  }
-  .button {
-    background-color: #4a90e2;
-    color: white;
-    border: none;
-    padding: 10px 20px;
-    border-radius: 5px;
-    cursor: pointer;
-    font-size: 16px;
-    transition: background-color 0.3s;
-  }
-  .button:hover {
-    background-color: #357abd;
-  }
-  .button:disabled {
-    background-color: #cccccc;
-    cursor: not-allowed;
-  }
-  #nextDoseInfo {
-    margin-top: 20px;
-    font-weight: bold;
-  }
-  #tickOffNextDose {
-    display: none;
-    margin-top: 10px;
-  }
-</style>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Guided Jotform Tour</title>
+  <link rel="stylesheet" href="https://unpkg.com/intro.js/minified/introjs.min.css">
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 30px;
+      background: #f4f4f4;
+    }
+
+    #start-tour {
+      background-color: #007bff;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      font-size: 16px;
+      border-radius: 5px;
+      cursor: pointer;
+      margin-bottom: 20px;
+    }
+
+    iframe {
+      width: 100%;
+      height: 700px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+    }
+
+    .tour-section {
+      margin-bottom: 30px;
+    }
+  </style>
 </head>
 <body>
-  <div class="app-container">
-    <h1>MedTracker</h1>
-    <button id="takeDose" class="button">Take First Dose</button>
-    <p id="nextDoseInfo"></p>
-    <button id="tickOffNextDose" class="button">Tick Off Next Dose</button>
+
+  <button id="start-tour">🚀 Start Guided Tour</button>
+
+  <div class="tour-section" id="form-container"
+       data-intro="Welcome! This is where you'll fill in your User Tour form."
+       data-step="1">
+    <iframe
+      id="JotFormIFrame-251518693176061"
+      title="User Tour Form"
+      onload="window.parent.scrollTo(0,0)"
+      allowtransparency="true"
+      allow="geolocation; microphone; camera; fullscreen; payment"
+      src="https://form.jotform.com/251518693176061"
+      frameborder="0"
+      style="min-width:100%;max-width:100%;height:700px;border:none;"
+      scrolling="no">
+    </iframe>
+    <script src='https://cdn.jotfor.ms/s/umd/latest/for-form-embed-handler.js'></script>
+    <script>
+      window.jotformEmbedHandler("iframe[id='JotFormIFrame-251518693176061']", "https://form.jotform.com/");
+    </script>
   </div>
 
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js"></script>
+  <div class="tour-section" id="submission-tip"
+       data-intro="Once completed, your responses are submitted here!"
+       data-step="2">
+    <p><strong>Note:</strong> Once you complete the form, it will automatically submit and notify our team.</p>
+  </div>
+
+  <script src="https://unpkg.com/intro.js/minified/intro.min.js"></script>
   <script>
-    const takeDoseBtn = document.getElementById('takeDose');
-    const tickOffNextDoseBtn = document.getElementById('tickOffNextDose');
-    const nextDoseInfo = document.getElementById('nextDoseInfo');
-    let nextDoseTime;
-
-    takeDoseBtn.addEventListener('click', () => {
-      takeDoseBtn.disabled = true;
-      nextDoseTime = moment().add(4, 'hours');
-      updateNextDoseInfo();
-      scheduleReminder();
-    });
-
-    tickOffNextDoseBtn.addEventListener('click', () => {
-      tickOffNextDoseBtn.style.display = 'none';
-      takeDoseBtn.disabled = false;
-      nextDoseInfo.textContent = '';
-    });
-
-    function updateNextDoseInfo() {
-      nextDoseInfo.textContent = `Next dose due at: ${nextDoseTime.format('HH:mm')}`;
-    }
-
-    function scheduleReminder() {
-      const timeUntilReminder = nextDoseTime.diff(moment());
-      setTimeout(() => {
-        showReminder();
-      }, timeUntilReminder);
-    }
-
-    function showReminder() {
-      if ('Notification' in window) {
-        Notification.requestPermission().then(permission => {
-          if (permission === 'granted') {
-            new Notification('Medication Reminder', {
-              body: 'It\'s time for your next dose!',
-              icon: '/favicon.ico'
-            });
-          }
-        });
-      }
-      tickOffNextDoseBtn.style.display = 'inline-block';
-    }
-
-    // Check for saved state on page load
-    window.addEventListener('load', () => {
-      const savedNextDoseTime = localStorage.getItem('nextDoseTime');
-      if (savedNextDoseTime) {
-        nextDoseTime = moment(savedNextDoseTime);
-        if (nextDoseTime.isAfter(moment())) {
-          takeDoseBtn.disabled = true;
-          updateNextDoseInfo();
-          scheduleReminder();
-        } else {
-          localStorage.removeItem('nextDoseTime');
-        }
-      }
-    });
-
-    // Save state before page unload
-    window.addEventListener('beforeunload', () => {
-      if (nextDoseTime) {
-        localStorage.setItem('nextDoseTime', nextDoseTime.toISOString());
-      }
+    document.getElementById('start-tour').addEventListener('click', function () {
+      introJs().start();
     });
   </script>
-</body></html>
+</body>
+</html>
