@@ -1,74 +1,128 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>Guided Jotform Tour</title>
-  <link rel="stylesheet" href="https://unpkg.com/intro.js/minified/introjs.min.css">
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      padding: 30px;
-      background: #f4f4f4;
-    }
+import requests
+import json
+from datetime import datetime, timedelta
 
-    #start-tour {
-      background-color: #007bff;
-      color: white;
-      border: none;
-      padding: 10px 20px;
-      font-size: 16px;
-      border-radius: 5px;
-      cursor: pointer;
-      margin-bottom: 20px;
-    }
+class SubmissionSelectorBackend:
+    def __init__(self):
+        self.api_key = 'fe5734f84760e925543e46cc86812ef7'
+        self.base_url = 'https://downer.jotform.com/API'
+        self.form_id = '251528873034055'
 
-    iframe {
-      width: 100%;
-      height: 700px;
-      border: 1px solid #ccc;
-      border-radius: 6px;
-    }
+    def get_submissions_for_widget(self, limit=10):
+        """
+        Get recent submissions formatted for the widget
+        """
+        try:
+            url = f"{self.base_url}/form/{self.form_id}/submissions"
+            params = {
+                'apiKey': self.api_key,
+                'limit': limit,
+                'orderby': 'created_at',
+                'direction': 'DESC'
+            }
 
-    .tour-section {
-      margin-bottom: 30px;
-    }
-  </style>
-</head>
-<body>
+            response = requests.get(url, params=params)
+            response.raise_for_status()
 
-  <button id="start-tour">🚀 Start Guided Tour</button>
+            data = response.json()
 
-  <div class="tour-section" id="form-container"
-       data-intro="Welcome! This is where you'll fill in your User Tour form."
-       data-step="1">
-    <iframe
-      id="JotFormIFrame-251518693176061"
-      title="User Tour Form"
-      onload="window.parent.scrollTo(0,0)"
-      allowtransparency="true"
-      allow="geolocation; microphone; camera; fullscreen; payment"
-      src="https://form.jotform.com/251518693176061"
-      frameborder="0"
-      style="min-width:100%;max-width:100%;height:700px;border:none;"
-      scrolling="no">
-    </iframe>
-    <script src='https://cdn.jotfor.ms/s/umd/latest/for-form-embed-handler.js'></script>
-    <script>
-      window.jotformEmbedHandler("iframe[id='JotFormIFrame-251518693176061']", "https://form.jotform.com/");
-    </script>
-  </div>
+            if data['responseCode'] == 200:
+                return self.format_submissions_for_widget(data['content'])
+            return []
 
-  <div class="tour-section" id="submission-tip"
-       data-intro="Once completed, your responses are submitted here!"
-       data-step="2">
-    <p><strong>Note:</strong> Once you complete the form, it will automatically submit and notify our team.</p>
-  </div>
+        except requests.RequestException as e:
+            print(f"Error fetching submissions: {e}")
+            return []
 
-  <script src="https://unpkg.com/intro.js/minified/intro.min.js"></script>
-  <script>
-    document.getElementById('start-tour').addEventListener('click', function () {
-      introJs().start();
-    });
-  </script>
-</body>
-</html>
+    def format_submissions_for_widget(self, submissions):
+        """
+        Format submissions for easy consumption by the widget
+        """
+        formatted = []
+
+        for submission in submissions:
+            answers = submission.get('answers', {})
+
+            # Extract meter readings
+            plant_hour_end = None
+            burner_fuel_end = None
+
+            for qid, answer in answers.items():
+                text = answer.get('text', '').lower()
+                if 'plant hour meter end' in text:
+                    plant_hour_end = answer.get('answer')
+                elif 'burner fuel meter end' in text:
+                    burner_fuel_end = answer.get('answer')
+
+            # Only include submissions with meter readings
+            if plant_hour_end or burner_fuel_end:
+                formatted.append({
+                    'id': submission['id'],
+                    'created_at': submission['created_at'],
+                    'plant_hour_end': plant_hour_end,
+                    'burner_fuel_end': burner_fuel_end,
+                    'formatted_date': self.format_date(submission['created_at'])
+                })
+
+        return formatted
+
+    def format_date(self, date_string):
+        """
+        Format date for display in the widget
+        """
+        try:
+            dt = datetime.strptime(date_string, '%Y-%m-%d %H:%M:%S')
+            return dt.strftime('%Y-%m-%d %H:%M')
+        except:
+            return date_string
+
+    def get_form_question_mapping(self):
+        """
+        Get the question ID mapping for the form fields
+        """
+        try:
+            url = f"{self.base_url}/form/{self.form_id}/questions"
+            params = {'apiKey': self.api_key}
+
+            response = requests.get(url, params=params)
+            response.raise_for_status()
+
+            data = response.json()
+
+            if data['responseCode'] == 200:
+                mapping = {}
+                for qid, question in data['content'].items():
+                    text = question.get('text', '').lower()
+                    mapping[qid] = {
+                        'text': question.get('text', ''),
+                        'type': question.get('type', ''),
+                        'is_start_field': 'start' in text,
+                        'is_end_field': 'end' in text,
+                        'is_plant_hour': 'plant hour' in text,
+                        'is_burner_fuel': 'burner fuel' in text
+                    }
+                return mapping
+            return {}
+
+        except requests.RequestException as e:
+            print(f"Error fetching questions: {e}")
+            return {}
+
+# Usage example
+def main():
+    backend = SubmissionSelectorBackend()
+
+    # Get recent submissions
+    submissions = backend.get_submissions_for_widget()
+    print("Recent submissions:")
+    for sub in submissions:
+        print(f"- {sub['formatted_date']}: Plant {sub['plant_hour_end']}, Burner {sub['burner_fuel_end']}")
+
+    # Get question mapping
+    print("\nForm question mapping:")
+    mapping = backend.get_form_question_mapping()
+    for qid, info in mapping.items():
+        print(f"Q{qid}: {info['text']}")
+
+if __name__ == "__main__":
+    main()
