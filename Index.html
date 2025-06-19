@@ -1,128 +1,242 @@
-import requests
-import json
-from datetime import datetime, timedelta
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Searchable Spreadsheet to Form</title>
+    
+    <!-- External Libraries: TailwindCSS for styling, jQuery, Select2 for the searchable dropdown, and SheetJS for spreadsheet parsing -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/css/select2.min.css" rel="stylesheet" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/js/select2.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.5/xlsx.full.min.js"></script>
 
-class SubmissionSelectorBackend:
-    def __init__(self):
-        self.api_key = 'fe5734f84760e925543e46cc86812ef7'
-        self.base_url = 'https://downer.jotform.com/API'
-        self.form_id = '251528873034055'
+    <!-- JotForm Widget API Script -->
+    <script src="https://js.jotform.com/JotFormWidgets.min.js"></script>
 
-    def get_submissions_for_widget(self, limit=10):
-        """
-        Get recent submissions formatted for the widget
-        """
-        try:
-            url = f"{self.base_url}/form/{self.form_id}/submissions"
-            params = {
-                'apiKey': self.api_key,
-                'limit': limit,
-                'orderby': 'created_at',
-                'direction': 'DESC'
+    <style>
+        /* Custom styles to make Select2 blend better with JotForm and Tailwind */
+        .select2-container .select2-selection--single {
+            height: 42px;
+            border-radius: 0.375rem; /* rounded-md */
+            border: 1px solid #D1D5DB; /* gray-300 */
+            padding-top: 5px;
+        }
+        .select2-container--default .select2-selection--single .select2-selection__arrow {
+            height: 40px;
+        }
+        .select2-container--default .select2-selection--single .select2-selection__rendered {
+            line-height: 32px;
+        }
+        .select2-dropdown {
+            border-radius: 0.375rem;
+            border: 1px solid #D1D5DB;
+        }
+        .select2-search__field {
+            border-radius: 0.25rem;
+            border: 1px solid #D1D5DB;
+        }
+        .select2-container {
+            width: 100% !important;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 font-sans p-4">
+
+    <!-- 
+        WIDGET SETTINGS VIEW 
+        This section is only visible to the form creator in the JotForm builder.
+    -->
+    <div id="widget-settings" class="hidden space-y-6">
+        <h1 class="text-2xl font-bold text-gray-800">Configure Widget</h1>
+        <div class="p-4 bg-white border border-gray-200 rounded-lg shadow-sm">
+            <h2 class="text-lg font-semibold text-gray-700 mb-2">1. Upload Your Spreadsheet</h2>
+            <p class="text-sm text-gray-500 mb-3">Upload an XLSX, XLS, or CSV file. The first row must contain your column headers.</p>
+            <input type="file" id="spreadsheet-upload" accept=".xlsx, .xls, .csv" class="block w-full text-sm text-gray-900 bg-gray-50 rounded-lg border border-gray-300 cursor-pointer focus:outline-none">
+            <p id="file-status" class="text-sm text-green-600 mt-2 font-medium"></p>
+        </div>
+
+        <div id="column-selection-area" class="hidden p-4 bg-white border border-gray-200 rounded-lg shadow-sm">
+            <h2 class="text-lg font-semibold text-gray-700 mb-2">2. Select Access Code Column</h2>
+            <p class="text-sm text-gray-500 mb-3">Choose the column from your spreadsheet that contains the unique codes for lookup.</p>
+            <select id="column-selector" class="block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"></select>
+        </div>
+        
+        <div class="flex justify-end">
+            <button id="save-settings-btn" class="bg-blue-600 text-white font-bold py-2 px-4 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:bg-gray-400" disabled>
+                Save Settings
+            </button>
+        </div>
+        <p class="text-xs text-gray-500 text-center">After saving, your end-users will see a searchable dropdown to populate the form.</p>
+    </div>
+
+    <!-- 
+        LIVE WIDGET VIEW 
+        This section is what the end-user sees on the live form.
+    -->
+    <div id="live-widget" class="hidden space-y-3">
+        <label id="widget-label" for="code-selector" class="block text-sm font-medium text-gray-700">Select your Access Code</label>
+        <select id="code-selector" class="w-full">
+            <option></option> <!-- Required for Select2 placeholder -->
+        </select>
+        <p id="result-message" class="text-sm mt-2"></p>
+    </div>
+
+    <script type="text/javascript">
+        // Use window.onload to ensure all external scripts, including JotForm's, are fully loaded.
+        window.onload = function() {
+            // First, check if the JotForm API object (JFC) exists. If not, the widget can't run.
+            if (typeof JFC === 'undefined' || !JFC) {
+                document.body.innerHTML = '<div class="p-4 text-red-700 bg-red-100 border border-red-400 rounded-lg"><strong>Widget Error:</strong> The JotForm API (JFC) could not be loaded. This widget must be used inside a JotForm form.</div>';
+                console.error("JFC object not found on window.onload. Widget cannot initialize.");
+                return;
             }
 
-            response = requests.get(url, params=params)
-            response.raise_for_status()
+            // JFC.ready ensures that the JotForm environment is fully initialized.
+            JFC.ready(function() {
+                // Global variable to hold spreadsheet data (as an array of objects)
+                let spreadsheetData = [];
 
-            data = response.json()
+                /**
+                 * Handles the file upload process.
+                 * Reads the spreadsheet file and converts it to a JSON array.
+                 */
+                function handleFile(e) {
+                    const file = e.target.files[0];
+                    if (!file) return;
 
-            if data['responseCode'] == 200:
-                return self.format_submissions_for_widget(data['content'])
-            return []
+                    $('#file-status').text(`Processing ${file.name}...`).removeClass('text-red-600').addClass('text-green-600');
+                    const reader = new FileReader();
 
-        except requests.RequestException as e:
-            print(f"Error fetching submissions: {e}")
-            return []
+                    reader.onload = function(event) {
+                        try {
+                            const data = new Uint8Array(event.target.result);
+                            const workbook = XLSX.read(data, { type: 'array' });
+                            const firstSheetName = workbook.SheetNames[0];
+                            const worksheet = workbook.Sheets[firstSheetName];
+                            
+                            spreadsheetData = XLSX.utils.sheet_to_json(worksheet);
+                            
+                            if (spreadsheetData.length === 0) {
+                                throw new Error("Spreadsheet is empty or has an invalid format.");
+                            }
 
-    def format_submissions_for_widget(self, submissions):
-        """
-        Format submissions for easy consumption by the widget
-        """
-        formatted = []
+                            const headers = Object.keys(spreadsheetData[0]);
+                            const columnSelector = $('#column-selector');
+                            columnSelector.empty();
+                            headers.forEach(header => {
+                                columnSelector.append(new Option(header, header));
+                            });
 
-        for submission in submissions:
-            answers = submission.get('answers', {})
+                            $('#column-selection-area').slideDown();
+                            $('#file-status').text(`Successfully loaded ${spreadsheetData.length} rows from ${file.name}.`);
+                            $('#save-settings-btn').prop('disabled', false);
+                        } catch (error) {
+                            $('#file-status').text(`Error: ${error.message}`).removeClass('text-green-600').addClass('text-red-600');
+                            spreadsheetData = [];
+                            $('#column-selection-area').slideUp();
+                            $('#save-settings-btn').prop('disabled', true);
+                        }
+                    };
 
-            # Extract meter readings
-            plant_hour_end = None
-            burner_fuel_end = None
+                    reader.onerror = function() {
+                         $('#file-status').text('Error reading the file.').removeClass('text-green-600').addClass('text-red-600');
+                    };
 
-            for qid, answer in answers.items():
-                text = answer.get('text', '').lower()
-                if 'plant hour meter end' in text:
-                    plant_hour_end = answer.get('answer')
-                elif 'burner fuel meter end' in text:
-                    burner_fuel_end = answer.get('answer')
+                    reader.readAsArrayBuffer(file);
+                }
 
-            # Only include submissions with meter readings
-            if plant_hour_end or burner_fuel_end:
-                formatted.append({
-                    'id': submission['id'],
-                    'created_at': submission['created_at'],
-                    'plant_hour_end': plant_hour_end,
-                    'burner_fuel_end': burner_fuel_end,
-                    'formatted_date': self.format_date(submission['created_at'])
-                })
+                /**
+                 * Initializes the live widget view for the end-user.
+                 * Sets up the searchable Select2 dropdown.
+                 */
+                function initializeLiveView(settings) {
+                    try {
+                        const data = JSON.parse(settings.spreadsheetJSON);
+                        const codeColumn = settings.codeColumn;
+                        const widgetLabel = settings.label || 'Select your Access Code';
+                        
+                        $('#widget-label').text(widgetLabel);
 
-        return formatted
+                        const select2Data = data.map(row => {
+                            const code = row[codeColumn];
+                            return { id: code, text: String(code) };
+                        }).filter(item => item.id !== undefined && item.id !== null);
 
-    def format_date(self, date_string):
-        """
-        Format date for display in the widget
-        """
-        try:
-            dt = datetime.strptime(date_string, '%Y-%m-%d %H:%M:%S')
-            return dt.strftime('%Y-%m-%d %H:%M')
-        except:
-            return date_string
+                        $('#code-selector').select2({
+                            data: select2Data,
+                            placeholder: "Type or select a code",
+                            allowClear: true
+                        });
 
-    def get_form_question_mapping(self):
-        """
-        Get the question ID mapping for the form fields
-        """
-        try:
-            url = f"{self.base_url}/form/{self.form_id}/questions"
-            params = {'apiKey': self.api_key}
+                        $('#code-selector').on('select2:select', function (e) {
+                            const selectedCode = e.params.data.id;
+                            // Use string comparison for robust matching
+                            const rowData = data.find(row => String(row[codeColumn]) === String(selectedCode));
+                            
+                            if (rowData) {
+                                const fieldsToPopulate = {};
+                                for (const key in rowData) {
+                                    fieldsToPopulate[key] = rowData[key];
+                                }
+                                
+                                JFC.F.setValues(fieldsToPopulate, function(isSuccess) {
+                                    if (isSuccess) {
+                                         $('#result-message').text('Form populated successfully!').addClass('text-green-600').removeClass('text-red-600');
+                                    } else {
+                                         $('#result-message').text('Could not populate form fields.').addClass('text-red-600').removeClass('text-green-600');
+                                    }
+                                });
+                            }
+                        });
+                        
+                        $('#code-selector').on('select2:unselect', function(e) {
+                            $('#result-message').text('');
+                        });
 
-            response = requests.get(url, params=params)
-            response.raise_for_status()
-
-            data = response.json()
-
-            if data['responseCode'] == 200:
-                mapping = {}
-                for qid, question in data['content'].items():
-                    text = question.get('text', '').lower()
-                    mapping[qid] = {
-                        'text': question.get('text', ''),
-                        'type': question.get('type', ''),
-                        'is_start_field': 'start' in text,
-                        'is_end_field': 'end' in text,
-                        'is_plant_hour': 'plant hour' in text,
-                        'is_burner_fuel': 'burner fuel' in text
+                        $('#live-widget').show();
+                    } catch (error) {
+                        $('#live-widget').html(`<div class="text-red-600 font-semibold">Error: Could not initialize widget. ${error.message} Please check the widget configuration.</div>`).show();
                     }
-                return mapping
-            return {}
+                }
 
-        except requests.RequestException as e:
-            print(f"Error fetching questions: {e}")
-            return {}
+                // --- Main Execution Block ---
+                const settings = JFC.getWidgetSettings();
 
-# Usage example
-def main():
-    backend = SubmissionSelectorBackend()
+                if (!settings.spreadsheetJSON || !settings.codeColumn) {
+                    $('#widget-settings').show();
+                    $('#spreadsheet-upload').on('change', handleFile);
 
-    # Get recent submissions
-    submissions = backend.get_submissions_for_widget()
-    print("Recent submissions:")
-    for sub in submissions:
-        print(f"- {sub['formatted_date']}: Plant {sub['plant_hour_end']}, Burner {sub['burner_fuel_end']}")
+                    $('#save-settings-btn').on('click', function() {
+                        const selectedColumn = $('#column-selector').val();
+                        if (spreadsheetData.length > 0 && selectedColumn) {
+                            const newSettings = {
+                                spreadsheetJSON: JSON.stringify(spreadsheetData),
+                                codeColumn: selectedColumn,
+                                label: JFC.getWidgetProperty('label')
+                            };
+                            
+                            JFC.saveWidgetSettings(newSettings, function() {
+                                // Use JotForm's broadcast for alerts for better UX
+                                JFC.broadcast('alert', 'Settings saved successfully!');
+                                JFC.sendSubmit();
+                            });
+                        } else {
+                            JFC.broadcast('alert', 'Please upload a valid spreadsheet and select a column first.');
+                        }
+                    });
+                } else {
+                    initializeLiveView(settings);
+                }
 
-    # Get question mapping
-    print("\nForm question mapping:")
-    mapping = backend.get_form_question_mapping()
-    for qid, info in mapping.items():
-        print(f"Q{qid}: {info['text']}")
-
-if __name__ == "__main__":
-    main()
+                // Make the widget iframe responsive
+                JFC.subscribe("layout", "resize", function() {
+                    JFC.iframe.Resizer.setup();
+                });
+                JFC.iframe.Resizer.setup();
+            });
+        };
+    </script>
+</body>
+</html>
