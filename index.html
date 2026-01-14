@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UFA Martial Arts Academy | Modern Concept</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        heading: ['Oswald', 'sans-serif'],
+                    },
+                    colors: {
+                        primary: 'var(--color-primary)',
+                        primaryDark: 'var(--color-primary-dark)',
+                        secondary: 'var(--color-secondary)',
+                        bgDark: 'var(--color-bg-dark)',
+                        bgCard: 'var(--color-bg-card)',
+                        textLight: 'var(--color-text-light)',
+                        textMuted: 'var(--color-text-muted)',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Default Theme: Prestige (Navy/Gold) */
+        :root {
+            --color-primary: #F59E0B; /* Amber/Gold */
+            --color-primary-dark: #D97706;
+            --color-secondary: #1E3A8A; /* Dark Blue */
+            --color-bg-dark: #0F172A; /* Slate 900 */
+            --color-bg-card: #1E293B; /* Slate 800 */
+            --color-text-light: #F8FAFC;
+            --color-text-muted: #94A3B8;
+        }
+
+        .theme-focus {
+            --color-primary: #2DD4BF; /* Teal */
+            --color-primary-dark: #14B8A6;
+            --color-secondary: #334155; /* Slate */
+            --color-bg-dark: #111827; /* Gray 900 */
+            --color-bg-card: #1F2937; /* Gray 800 */
+            --color-text-light: #F3F4F6;
+            --color-text-muted: #9CA3AF;
+        }
+
+        .theme-energy {
+            --color-primary: #FF6B00; /* Vibrant Orange */
+            --color-primary-dark: #CC5500;
+            --color-secondary: #581C87; /* Deep Purple */
+            --color-bg-dark: #2E1065; /* Dark Purple */
+            --color-bg-card: #4C1D95; /* Lighter Purple */
+            --color-text-light: #FAF5FF;
+            --color-text-muted: #D8B4FE;
+        }
+
+        .hero-bg {
+            background-image: linear-gradient(to right, var(--color-bg-dark), rgba(0,0,0,0.4)), url('https://images.unsplash.com/photo-1599058945522-28d584b6f0ff?ixlib=rb-4.0.3&auto=format&fit=crop&w=2069&q=80');
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+        }
+
+        /* Smooth transition for colors when switching themes */
+        body, div, nav, button, a, i, span, h1, h2, h3, h4, p, input, section {
+            transition: background-color 0.5s ease, color 0.5s ease, border-color 0.5s ease;
+        }
+    </style>
+</head>
+<body class="bg-bgDark text-textLight font-sans antialiased">
+
+    <!-- Theme Switcher Widget -->
+    <div class="fixed bottom-6 right-6 z-50 bg-white/10 backdrop-blur-md p-4 rounded-xl border border-white/20 shadow-2xl">
+        <p class="text-xs font-bold uppercase mb-3 text-white tracking-widest text-center">Select Vibe</p>
+        <div class="flex flex-col gap-2">
+            <button onclick="setTheme('default')" class="flex items-center gap-3 px-4 py-2 rounded bg-[#0F172A] hover:scale-105 transition-transform border border-gray-600">
+                <div class="w-4 h-4 rounded-full bg-[#F59E0B]"></div>
+                <span class="text-xs font-bold text-white">PRESTIGE (Navy/Gold)</span>
+            </button>
+            <button onclick="setTheme('focus')" class="flex items-center gap-3 px-4 py-2 rounded bg-[#111827] hover:scale-105 transition-transform border border-gray-600">
+                <div class="w-4 h-4 rounded-full bg-[#2DD4BF]"></div>
+                <span class="text-xs font-bold text-white">FOCUS (Teal/Dark)</span>
+            </button>
+            <button onclick="setTheme('energy')" class="flex items-center gap-3 px-4 py-2 rounded bg-[#2E1065] hover:scale-105 transition-transform border border-gray-600">
+                <div class="w-4 h-4 rounded-full bg-[#FF6B00]"></div>
+                <span class="text-xs font-bold text-white">ENERGY (Purple/Orange)</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Navigation -->
+    <nav class="fixed w-full z-40 bg-bgDark/95 backdrop-blur-sm border-b border-white/5" id="navbar">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-20">
+                <!-- Logo -->
+                <div class="flex-shrink-0 flex items-center gap-2">
+                    <div class="w-10 h-10 bg-primary rounded flex items-center justify-center font-heading font-bold text-xl text-bgDark">UFA</div>
+                    <span class="font-heading text-2xl font-bold tracking-wide">UFA <span class="text-primary">PENRITH</span></span>
+                </div>
+                
+                <!-- Desktop Menu -->
+                <div class="hidden md:block">
+                    <div class="ml-10 flex items-baseline space-x-8">
+                        <a href="#home" class="hover:text-primary transition-colors px-3 py-2 font-medium">Home</a>
+                        <a href="#programs" class="hover:text-primary transition-colors px-3 py-2 font-medium">Programs</a>
+                        <a href="#about" class="hover:text-primary transition-colors px-3 py-2 font-medium">About</a>
+                        <a href="#timetable" class="hover:text-primary transition-colors px-3 py-2 font-medium">Timetable</a>
+                        <a href="#contact" class="bg-primary hover:bg-primaryDark text-bgDark px-5 py-2 rounded-sm font-heading font-bold uppercase tracking-wider transition-all transform hover:-translate-y-0.5">Free Trial</a>
+                    </div>
+                </div>
+
+                <!-- Mobile menu button -->
+                <div class="md:hidden">
+                    <button onclick="document.getElementById('mobile-menu').classList.toggle('hidden')" class="text-textLight hover:text-primary p-2">
+                        <i class="fas fa-bars text-2xl"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Mobile Menu -->
+        <div class="hidden md:hidden bg-bgCard border-t border-white/5" id="mobile-menu">
+            <div class="px-2 pt-2 pb-3 space-y-1 sm:px-3">
+                <a href="#home" class="block hover:bg-white/5 px-3 py-2 rounded-md text-base font-medium">Home</a>
+                <a href="#programs" class="block hover:bg-white/5 px-3 py-2 rounded-md text-base font-medium">Programs</a>
+                <a href="#about" class="block hover:bg-white/5 px-3 py-2 rounded-md text-base font-medium">About</a>
+                <a href="#contact" class="block bg-primary text-bgDark text-center mt-4 px-3 py-3 rounded-md text-base font-bold uppercase">Book Free Trial</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section id="home" class="hero-bg h-screen flex items-center relative">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 w-full pt-16">
+            <div class="max-w-3xl">
+                <div class="inline-block border border-primary text-primary px-4 py-1 mb-6 text-xs font-bold uppercase tracking-[0.2em] bg-bgDark/50 backdrop-blur-sm">Est. 1995 • Penrith's Original Academy</div>
+                <h1 class="text-5xl md:text-7xl font-heading font-bold leading-none mb-6 text-white uppercase drop-shadow-2xl">
+                    Master The Art.<br>
+                    <span class="text-primary">Unlock Your Power.</span>
+                </h1>
+                <p class="text-xl md:text-2xl text-textMuted mb-8 font-light max-w-2xl">
+                    More than a gym. A community dedicated to growth, discipline, and real-world skills. Join the longest running martial arts academy in Penrith.
+                </p>
+                <div class="flex flex-col sm:flex-row gap-4">
+                    <a href="#contact" class="bg-primary hover:bg-primaryDark text-bgDark text-center px-8 py-4 rounded-sm font-heading font-bold text-lg uppercase tracking-wider transition-all shadow-[0_0_20px_rgba(0,0,0,0.3)]">
+                        Start Free Trial
+                    </a>
+                    <a href="#programs" class="border border-white/30 hover:bg-white hover:text-bgDark text-white text-center px-8 py-4 rounded-sm font-heading font-bold text-lg uppercase tracking-wider transition-all backdrop-blur-sm">
+                        View Programs
+                    </a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Stats / Trust Bar -->
+    <div class="bg-bgCard border-b border-white/5 relative z-20">
+        <div class="max-w-7xl mx-auto px-4 py-10">
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
+                <div class="p-4 rounded hover:bg-white/5 transition-colors">
+                    <i class="fas fa-certificate text-3xl mb-3 text-primary"></i>
+                    <p class="font-heading font-bold text-lg text-textLight">Est. 1995</p>
+                    <p class="text-sm text-textMuted">Locally Owned & Operated</p>
+                </div>
+                <div class="p-4 rounded hover:bg-white/5 transition-colors">
+                    <i class="fas fa-child text-3xl mb-3 text-primary"></i>
+                    <p class="font-heading font-bold text-lg text-textLight">Family Focused</p>
+                    <p class="text-sm text-textMuted">Safe Environment for Kids</p>
+                </div>
+                <div class="p-4 rounded hover:bg-white/5 transition-colors">
+                    <i class="fas fa-dumbbell text-3xl mb-3 text-primary"></i>
+                    <p class="font-heading font-bold text-lg text-textLight">Modern Facilities</p>
+                    <p class="text-sm text-textMuted">Professional Equipment</p>
+                </div>
+                <div class="p-4 rounded hover:bg-white/5 transition-colors">
+                    <i class="fas fa-user-graduate text-3xl mb-3 text-primary"></i>
+                    <p class="font-heading font-bold text-lg text-textLight">Expert Coaches</p>
+                    <p class="text-sm text-textMuted">Certified Instructors</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Programs Section -->
+    <section id="programs" class="py-24 bg-bgDark relative">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex flex-col md:flex-row justify-between items-end mb-12">
+                <div>
+                    <h2 class="text-primary font-heading font-bold text-xl uppercase tracking-widest mb-2">Our Disciplines</h2>
+                    <h3 class="text-4xl md:text-5xl font-heading font-bold text-textLight uppercase">Train Your Way</h3>
+                </div>
+                <a href="#" class="hidden md:inline-block text-textLight hover:text-primary transition-colors font-heading uppercase tracking-wider border-b border-primary pb-1">View Full Timetable</a>
+            </div>
+
+            <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- BJJ Card -->
+                <div class="group relative overflow-hidden rounded-xl bg-bgCard border border-white/5 hover:border-primary/50 transition-all duration-300">
+                    <div class="h-64 overflow-hidden relative">
+                        <img src="https://images.unsplash.com/photo-1564415315949-7a0c4c73aab4?ixlib=rb-4.0.3&auto=format&fit=crop&w=687&q=80" alt="BJJ" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110 grayscale group-hover:grayscale-0">
+                        <div class="absolute inset-0 bg-primary/20 mix-blend-overlay opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                    </div>
+                    <div class="p-8">
+                        <div class="flex justify-between items-start mb-4">
+                            <h4 class="text-2xl font-heading font-bold text-textLight">Brazilian Jiu Jitsu</h4>
+                            <i class="fas fa-chess-knight text-primary text-xl"></i>
+                        </div>
+                        <p class="text-textMuted mb-6 text-sm leading-relaxed">The gentle art. Learn to control opponents using leverage and technique. Perfect for self-defence and full-body fitness without the impact of striking.</p>
+                        <a href="#" class="inline-flex items-center text-primary font-bold uppercase text-sm tracking-wider hover:translate-x-2 transition-transform">Details <i class="fas fa-arrow-right ml-2"></i></a>
+                    </div>
+                </div>
+
+                <!-- Combat 4 Fitness Card -->
+                <div class="group relative overflow-hidden rounded-xl bg-bgCard border border-white/5 hover:border-primary/50 transition-all duration-300">
+                    <div class="h-64 overflow-hidden relative">
+                        <img src="https://images.unsplash.com/photo-1595078475328-1ab05d0a6a0e?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80" alt="Striking" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110 grayscale group-hover:grayscale-0">
+                        <div class="absolute inset-0 bg-primary/20 mix-blend-overlay opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                    </div>
+                    <div class="p-8">
+                        <div class="flex justify-between items-start mb-4">
+                            <h4 class="text-2xl font-heading font-bold text-textLight">Combat 4 Fitness</h4>
+                            <i class="fas fa-heartbeat text-primary text-xl"></i>
+                        </div>
+                        <p class="text-textMuted mb-6 text-sm leading-relaxed">Train like a fighter, look like a fighter, without the fight. High-intensity striking and conditioning classes designed to torch calories and build endurance.</p>
+                        <a href="#" class="inline-flex items-center text-primary font-bold uppercase text-sm tracking-wider hover:translate-x-2 transition-transform">Details <i class="fas fa-arrow-right ml-2"></i></a>
+                    </div>
+                </div>
+
+                <!-- HapKiDo Card -->
+                <div class="group relative overflow-hidden rounded-xl bg-bgCard border border-white/5 hover:border-primary/50 transition-all duration-300">
+                    <div class="h-64 overflow-hidden relative">
+                        <img src="https://images.unsplash.com/photo-1555597673-b21d5c935865?ixlib=rb-4.0.3&auto=format&fit=crop&w=1172&q=80" alt="HapKiDo" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110 grayscale group-hover:grayscale-0">
+                        <div class="absolute inset-0 bg-primary/20 mix-blend-overlay opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                    </div>
+                    <div class="p-8">
+                        <div class="flex justify-between items-start mb-4">
+                            <h4 class="text-2xl font-heading font-bold text-textLight">HapKiDo</h4>
+                            <i class="fas fa-yin-yang text-primary text-xl"></i>
+                        </div>
+                        <p class="text-textMuted mb-6 text-sm leading-relaxed">A complete system. Blending joint locks, throws, kicks, and strikes. This traditional art form builds incredible discipline, focus, and practical defence skills.</p>
+                        <a href="#" class="inline-flex items-center text-primary font-bold uppercase text-sm tracking-wider hover:translate-x-2 transition-transform">Details <i class="fas fa-arrow-right ml-2"></i></a>
+                    </div>
+                </div>
+
+                <!-- Kids Card -->
+                <div class="group relative overflow-hidden rounded-xl bg-bgCard border border-white/5 hover:border-primary/50 transition-all duration-300">
+                    <div class="h-64 overflow-hidden relative">
+                        <img src="https://images.unsplash.com/photo-1623875694318-6933f4a45a0b?ixlib=rb-4.0.3&auto=format&fit=crop&w=1170&q=80" alt="Kids Classes" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110 grayscale group-hover:grayscale-0">
+                        <div class="absolute inset-0 bg-primary/20 mix-blend-overlay opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                    </div>
+                    <div class="p-8">
+                        <div class="flex justify-between items-start mb-4">
+                            <h4 class="text-2xl font-heading font-bold text-textLight">Kids Programs</h4>
+                            <i class="fas fa-seedling text-primary text-xl"></i>
+                        </div>
+                        <p class="text-textMuted mb-6 text-sm leading-relaxed">Give your child the gift of confidence. Our specialized kids programs (Ages 5-16) focus on respect, anti-bullying, and coordination in a fun setting.</p>
+                        <a href="#" class="inline-flex items-center text-primary font-bold uppercase text-sm tracking-wider hover:translate-x-2 transition-transform">Details <i class="fas fa-arrow-right ml-2"></i></a>
+                    </div>
+                </div>
+
+                 <!-- MMA Card -->
+                 <div class="group relative overflow-hidden rounded-xl bg-bgCard border border-white/5 hover:border-primary/50 transition-all duration-300 lg:col-span-2">
+                    <div class="h-64 overflow-hidden relative">
+                        <img src="https://images.unsplash.com/photo-1509563268479-0f004cf3f58b?ixlib=rb-4.0.3&auto=format&fit=crop&w=1170&q=80" alt="MMA" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110 grayscale group-hover:grayscale-0">
+                        <div class="absolute inset-0 bg-primary/20 mix-blend-overlay opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                    </div>
+                    <div class="p-8">
+                        <div class="flex justify-between items-start mb-4">
+                            <h4 class="text-2xl font-heading font-bold text-textLight">MMA & Alta Program</h4>
+                            <i class="fas fa-fist-raised text-primary text-xl"></i>
+                        </div>
+                        <p class="text-textMuted mb-6 text-sm leading-relaxed">Train under renowned referee Steve Perceval. Whether you want to compete or just train like a pro, our 20-week Alta programs and general classes offer the highest standard of MMA coaching in the region.</p>
+                        <a href="#" class="inline-flex items-center text-primary font-bold uppercase text-sm tracking-wider hover:translate-x-2 transition-transform">Details <i class="fas fa-arrow-right ml-2"></i></a>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="mt-8 text-center md:hidden">
+                <a href="#" class="inline-block text-textLight hover:text-primary transition-colors font-heading uppercase tracking-wider border-b border-primary pb-1">View Full Timetable</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Content Split Section -->
+    <section id="about" class="py-24 bg-bgCard">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-
